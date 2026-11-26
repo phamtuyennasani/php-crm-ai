@@ -1,6 +1,6 @@
 # PHP CRM AI
 
-Package `nodeservice/php-crm-ai` phiên bản 1.1.0 dùng cho PHP thuần và các hệ thống PHP có bootstrap riêng. Yêu cầu PHP 8.2+, cURL, OpenSSL và JSON. Runtime dùng các extension PHP sẵn có.
+Package `nodeservice/php-crm-ai` phiên bản 1.1.1 dùng cho PHP thuần và các hệ thống PHP có bootstrap riêng. Yêu cầu PHP 8.2+, cURL, OpenSSL và JSON. Runtime dùng các extension PHP sẵn có.
 
 ## Cài bằng Composer
 
@@ -17,7 +17,7 @@ Sau khi package có trên Packagist, có thể bỏ lệnh cấu hình repositor
 
 ### Cài bằng ZIP artifact
 
-Đặt `nodeservice-php-crm-ai-1.1.0.zip` vào thư mục `packages` của website, rồi chạy tại thư mục dự án.
+Đặt `nodeservice-php-crm-ai-1.1.1.zip` vào thư mục `packages` của website, rồi chạy tại thư mục dự án.
 
 ```bash
 composer config repositories.crm-ai artifact ./packages
@@ -164,15 +164,19 @@ Repo giữ nguyên giấy phép `proprietary`. Phiên bản Composer được l�
 Trước khi phát hành bản mới, chạy `composer validate --strict` và `composer test`, commit mã nguồn, rồi tạo và đẩy tag phiên bản, ví dụ:
 
 ```bash
-git tag -a v1.1.1 -m "Release v1.1.1"
+git tag -a v1.1.2 -m "Release v1.1.2"
 git push origin main
-git push origin v1.1.1
+git push origin v1.1.2
 ```
 
-Để đăng ký package sau này, gửi URL `https://github.com/phamtuyennasani/php-crm-ai` tại [Packagist Submit](https://packagist.org/packages/submit). Bản `v1.1.0` đã có sẵn trong repo. Sau khi đăng ký, cấu hình cập nhật tự động trên Packagist theo tài khoản của bạn. Quyền sử dụng mã nguồn tiếp tục theo giấy phép hiện tại.
+Để đăng ký package sau này, gửi URL `https://github.com/phamtuyennasani/php-crm-ai` tại [Packagist Submit](https://packagist.org/packages/submit). Bản `v1.1.1` đã có sẵn trong repo. Sau khi đăng ký, cấu hình cập nhật tự động trên Packagist theo tài khoản của bạn. Quyền sử dụng mã nguồn tiếp tục theo giấy phép hiện tại.
 
 GitHub source ZIP lấy phiên bản qua tag. Nếu cần ZIP artifact để cài offline, chạy `composer archive` tại tag phát hành và đổi trường `version` trong `composer.json` của bản artifact thành đúng số phiên bản trước khi đóng gói; giữ repo Git không có trường này.
 
 ## Đa ngôn ngữ
 
 Từ phiên bản 1.1.0, cấu hình `languages: {source, targets}` trong AIConfig và mapping theo locale. Viết, duyệt bản gốc trước rồi tạo từng bản dịch từ nội dung đã chỉnh trên form. Mỗi bản dùng một job/lượt riêng; bản dịch không ghi đè bản gốc. [Hướng dẫn và ví dụ Laravel/PHP đầy đủ](docs/multilingual.md).
+
+### Selector ngôn ngữ gọn
+
+Từ 1.1.1, khai báo một lần `fields: { Title: '[name="name[$lang]"]', Content: '[name="content[$lang]"]' }`. Widget tự thay `$lang` theo ngôn ngữ đang xử lý. Selector cố định không chứa `$lang` chỉ dùng cho bản gốc trong mapping tự động, phù hợp slug/SEO dùng chung. `fieldsByLocale` vẫn có thể thay mapping của một locale có tên trường khác quy luật. Trong PHP dùng chuỗi nháy đơn để giữ `$lang` nguyên dạng. Xem [ví dụ đầy đủ](docs/multilingual.md).

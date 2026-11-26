@@ -91,11 +91,11 @@ final class Widget
             if (count(array_unique(array_map('strtolower', $locales))) !== count($locales) || ! is_array($localizedFields)) {
                 throw new InvalidArgumentException('Language codes must be unique and have separate field mappings.');
             }
-            $localizedFields[$languages['source']] ??= $fields;
             foreach ($locales as $locale) {
-                $mapping = $localizedFields[$locale] ?? null;
+                $mapping = $localizedFields[$locale] ?? ($locale === $languages['source'] ? $fields
+                    : array_filter($fields, fn (string $selector): bool => str_contains($selector, '$lang')));
                 if (! is_array($mapping) || $mapping === [] || array_diff(array_keys($mapping), $allowed) !== []) {
-                    throw new InvalidArgumentException('Configure fields_by_locale for every language.');
+                    throw new InvalidArgumentException('Use $lang selectors or configure fields_by_locale for every target language.');
                 }
                 foreach ($mapping as $selector) {
                     if (! is_string($selector) || $selector === '' || strlen($selector) > 1000) {

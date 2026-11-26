@@ -188,6 +188,22 @@ final class PackageTest extends TestCase
         $store->install();
     }
 
+    public function test_language_templates_do_not_require_repeated_locale_mappings(): void
+    {
+        $widget = new Widget($this->client, self::ORIGIN, fn () => true);
+        $session = [];
+        $options = ['authorize_url' => '/authorize.php', 'form' => '#article',
+            'languages' => ['source' => 'en', 'targets' => ['vi', 'ja']],
+            'fields' => ['Title' => '[name="name[$lang]"]', 'Content' => '[name="content[$lang]"]', 'Slug' => '[name=slug]']];
+        $html = $widget->render($options, Widget::csrfToken($session));
+        $this->assertStringContainsString('name[$lang]', $html);
+        $this->assertStringContainsString('content[$lang]', $html);
+        $this->assertStringContainsString('"targets":["vi","ja"]', $html);
+        $this->assertStringNotContainsString(self::TOKEN, $html);
+        $this->expectException(\InvalidArgumentException::class);
+        $widget->render([...$options, 'fields' => ['Title' => '#title']], Widget::csrfToken($session));
+    }
+
     public function test_api_request_rejects_header_overrides_and_wrong_paths_before_transport(): void
     {
         foreach ([['POST', '/v1/article-jobs', ['Authorization' => 'override']], ['POST', '//evil.example/v1/jobs', []], ['POST', '/v1/jobs', ['Idempotency-Key' => "bad\r\nvalue"]]] as [$method, $target, $headers]) {

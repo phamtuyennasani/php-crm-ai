@@ -7,16 +7,21 @@ const AIConfig = {
   mount: '#ai-tools',
   form: '#article-form',
   languages: { source: 'en', targets: ['vi', 'ja'] },
-  fields: { Title: '[name="name[en]"]', Content: '[name="content[en]"]' },
-  fieldsByLocale: {
-    vi: { Title: '[name="name[vi]"]', Content: '[name="content[vi]"]' },
-    ja: { Title: '[name="name[ja]"]', Content: '[name="content[ja]"]' },
+  fields: {
+    Title: '[name="name[$lang]"]',
+    Content: '[name="content[$lang]"]',
   },
 };
 window.AIWriter.mount(AIConfig);
 ```
 
-`fields` là mapping bản gốc; có thể cung cấp lại bản gốc trong `fieldsByLocale`. Mỗi ngôn ngữ đích cần mapping riêng. Hai ngôn ngữ không được trỏ vào cùng phần tử form. Có thể map thêm `Slug`, `Desc`, `Description`, `Keywords`, `FocusKeyword`. Với rich editor, truyền `{selector, setValue, getValue}`; `getValue(element)` trả chuỗi nội dung mới nhất từ editor. Khi thiếu `getValue`, widget đọc giá trị input/textarea.
+Widget thay mọi `$lang` trong selector bằng mã ngôn ngữ đang xử lý: `name[$lang]` thành `name[en]`, `name[vi]` hoặc `name[ja]`. Mã dùng trong tên trường giữ nguyên cách khai báo của website, còn mã gửi API được chuẩn hóa BCP 47. Chỉ cần khai báo `fields` một lần, không cần lặp `fieldsByLocale` cho từng ngôn ngữ.
+
+Selector không chứa `$lang` chỉ áp dụng cho bản gốc khi dùng mapping tự động. Ví dụ `Slug: '[name="slug"]'` giữ slug dùng chung ở bản gốc, các bản dịch không ghi đè trường này. Nếu slug đa ngôn ngữ thì dùng `Slug: '[name="slug[$lang]"]'`. Quy tắc tương tự áp dụng cho SEO.
+
+`fieldsByLocale` vẫn được hỗ trợ khi một ngôn ngữ có tên trường khác quy luật. Khi khai báo, mapping đó thay toàn bộ mapping của locale tương ứng; có thể chứa selector cố định hoặc `$lang`. Hai ngôn ngữ không được trỏ vào cùng phần tử form. Selector phải khớp đúng một phần tử, nên các input/textarea tương ứng cần có trên form.
+
+Có thể map thêm `Desc`, `Description`, `Keywords`, `FocusKeyword`. Với rich editor, truyền `{selector, setValue, getValue}`; selector vẫn dùng `$lang`, hai callback nhận đúng phần tử sau khi thay ngôn ngữ. `getValue(element)` trả chuỗi nội dung mới nhất từ editor. Khi thiếu `getValue`, widget đọc giá trị input/textarea. Cấu hình không khai báo `languages` tiếp tục hỗ trợ selector cố định như trước.
 
 ## Quy trình
 
@@ -50,15 +55,20 @@ Các trường viết bài khác vẫn giữ nguyên. Snapshot hỗ trợ thêm 
 ## Laravel
 
 ```blade
+@php
+    $aiFields = [
+        'Title' => '[name="name[$lang]"]',
+        'Content' => '[name="content[$lang]"]',
+    ];
+@endphp
 <x-crm-ai::writer
     form="#article-form"
-    :fields="['Title' => '#title-en', 'Content' => '#body-en']"
+    :fields="$aiFields"
     :languages="['source' => 'en', 'targets' => ['vi']]"
-    :fields-by-locale="['vi' => ['Title' => '#title-vi', 'Content' => '#body-vi']]"
 />
 ```
 
-Có thể đặt `languages` trong `config/crm-ai.php` và chỉ truyền mapping theo từng form. BaseCodeAW tự lấy source từ `LanguageService::default()` và targets từ danh sách ngôn ngữ còn lại; dùng `getData()` cho CKEditor. Các trường SEO/slug dùng chung giữa các ngôn ngữ chỉ map vào bản gốc.
+Có thể đặt `languages` trong `config/crm-ai.php` và chỉ truyền mapping theo từng form. Trong PHP, dùng chuỗi nháy đơn để giữ nguyên `$lang`, tránh PHP nội suy biến. BaseCodeAW tự lấy source từ `LanguageService::default()` và targets từ danh sách ngôn ngữ còn lại; dùng selector mẫu và `getData()` cho CKEditor. Các trường SEO/slug dùng chung giữa các ngôn ngữ chỉ map vào bản gốc.
 
 ## PHP thuần
 
@@ -67,9 +77,8 @@ echo $widget->render([
     'authorize_url' => '/admin/crm-authorize.php',
     'form' => '#article-form',
     'languages' => ['source' => 'en', 'targets' => ['vi']],
-    'fields' => ['Title' => '#title-en', 'Content' => '#body-en'],
-    'fields_by_locale' => ['vi' => ['Title' => '#title-vi', 'Content' => '#body-vi']],
+    'fields' => ['Title' => '[name="name[$lang]"]', 'Content' => '[name="content[$lang]"]'],
 ], $csrf);
 ```
 
-Nâng cả package và script CRM khi bật đa ngôn ngữ. Package từ 1.1.0 tăng giới hạn endpoint cấp chữ ký để nhận snapshot nội dung; giữ cơ chế xác thực, quyền biên tập và CSRF của website.
+Nâng cả package và script CRM khi bật đa ngôn ngữ. Từ 1.1.1 hỗ trợ selector mẫu `$lang` trong cả hai package. Package từ 1.1.0 tăng giới hạn endpoint cấp chữ ký để nhận snapshot nội dung; giữ cơ chế xác thực, quyền biên tập và CSRF của website.
