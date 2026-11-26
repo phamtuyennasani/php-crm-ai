@@ -1,0 +1,55 @@
+#!/usr/bin/env php
+<?php
+
+use NodeService\CrmAiPhp\Client;
+use NodeService\CrmAiPhp\CredentialsStore;
+use NodeService\CrmAiPhp\PrivateFile;
+
+$autoload = $GLOBALS['_composer_autoload_path'] ?? __DIR__.'/../vendor/autoload.php';
+require is_file($autoload) ? $autoload : __DIR__.'/../autoload.php';
+
+$arguments = array_slice($argv, 1);
+$command = array_shift($arguments) ?? 'help';
+if (in_array($command, ['help', '--help', '-h'], true)) {
+    echo "Usage: php vendor/bin/crm-ai install|public-key --config=private/crm-ai.json\n";
+    exit(0);
+}
+$configPath = getcwd().'/private/crm-ai.json';
+try {
+    while ($arguments !== []) {
+        $argument = array_shift($arguments);
+        if (str_starts_with($argument, '--config=')) {
+            $configPath = substr($argument, 9);
+        } elseif ($argument === '--config' && $arguments !== []) {
+            $configPath = array_shift($arguments);
+        } else {
+            throw new InvalidArgumentException('Use --config to select a private JSON configuration file.');
+        }
+    }
+    if (! in_array($command, ['install', 'public-key'], true)) {
+        throw new InvalidArgumentException('Use the install or public-key command.');
+    }
+    if (! is_file($configPath) && $command === 'install') {
+        $url = getenv('CRM_API_URL');
+        $site = getenv('CRM_SITE_ID');
+        $token = getenv('CRM_SITE_TOKEN');
+        if (! $url || ! $site || ! $token) {
+            throw new RuntimeException('Create the private config from config.example.json or set CRM_API_URL, CRM_SITE_ID and CRM_SITE_TOKEN.');
+        }
+        $values = ['url' => $url, 'site_id' => $site, 'token' => $token,
+            'editor_origin' => getenv('CRM_EDITOR_ORIGIN') ?: '',
+            'allow_localhost' => getenv('CRM_ALLOW_LOCALHOST') === 'true'];
+        PrivateFile::create($configPath, json_encode($values, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
+    }
+    $client = Client::fromFile($configPath);
+    if ($command === 'install') {
+        $client->installSigningKey();
+        $directory = dirname(realpath($configPath));
+        (new CredentialsStore($directory.'/crm-ai-credentials.enc', $directory.'/crm-ai-credentials.key'))->install();
+        echo "CRM AI installed. Register this public key in CRM > Website > Connection API.\n";
+    }
+    echo $client->publicSigningKey();
+} catch (Throwable $error) {
+    fwrite(STDERR, $error->getMessage()."\n");
+    exit(1);
+}

@@ -1,0 +1,55 @@
+{
+    "name": "nodeservice/php-crm-ai",
+    "description": "Standalone PHP client and secure editor widget integration for NodeService CRM.",
+    "type": "library",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.2",
+        "ext-curl": "*",
+        "ext-json": "*",
+        "ext-openssl": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.5 || ^11.5 || ^12.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "NodeService\\CrmAiPhp\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "NodeService\\CrmAiPhp\\Tests\\": "tests/"
+        }
+    },
+    "bin": [
+        "bin/crm-ai"
+    ],
+    "scripts": {
+        "test": "phpunit"
+    },
+    "archive": {
+        "exclude": [
+            "/vendor",
+            "/tests",
+            "/private",
+            "/composer.lock",
+            "/phpunit.xml",
+            "/.phpunit.cache",
+            "/.gitignore"
+        ]
+    },
+    "homepage": "https://github.com/phamtuyennasani/php-crm-ai",
+    "keywords": [
+        "crm",
+        "ai",
+        "article",
+        "widget",
+        "signed-api",
+        "php-sdk"
+    ],
+    "support": {
+        "issues": "https://github.com/phamtuyennasani/php-crm-ai/issues",
+        "source": "https://github.com/phamtuyennasani/php-crm-ai"
+    }
+}

@@ -1,0 +1,7 @@
+{
+    "url": "https://crm.example.com",
+    "site_id": "00000000-0000-4000-8000-000000000000",
+    "token": "REPLACE_WITH_SITE_TOKEN",
+    "editor_origin": "https://website.example.com",
+    "allow_localhost": false
+}

@@ -1,0 +1,11 @@
+/vendor/
+/private/
+/composer.lock
+/.phpunit.cache/
+/.phpunit.result.cache
+/dist/
+/.env
+/.env.*
+*.pem
+*.key
+*.enc
