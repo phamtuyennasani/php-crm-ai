@@ -105,8 +105,17 @@ final class Widget
             }
         }
         $id = 'crm-ai-'.bin2hex(random_bytes(12));
+        $articleRef = $options['article_ref'] ?? null;
+        $sourceJobId = $options['source_job_id'] ?? null;
+        if ($articleRef !== null && (! is_string($articleRef) || ! preg_match('/\A[A-Za-z0-9][A-Za-z0-9:._\/-]{0,159}\z/', $articleRef))) {
+            throw new InvalidArgumentException('article_ref must be a stable article identifier of at most 160 characters.');
+        }
+        if ($sourceJobId !== null && (! is_string($sourceJobId) || ! preg_match('/\A[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}\z/i', $sourceJobId))) {
+            throw new InvalidArgumentException('source_job_id must be a CRM job UUID.');
+        }
         $config = [
             'mount' => '#'.$id, 'form' => $options['form'], 'fields' => $fields,
+            'articleRef' => $articleRef, 'sourceJobId' => $sourceJobId,
             ...($languages !== null ? ['languages' => $languages, 'fieldsByLocale' => $localizedFields] : []),
             'base_url' => $own['base_url'] ?? null, 'api_key' => $own['api_key'] ?? null, 'model' => $own['model'] ?? null,
         ];

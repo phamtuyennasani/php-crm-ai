@@ -225,4 +225,17 @@ final class PackageTest extends TestCase
         $this->expectException(\RuntimeException::class);
         (new Response(502, '<html>Invalid response</html>'))->json();
     }
+
+    public function test_saved_article_identity_is_rendered_and_malformed_references_are_rejected(): void
+    {
+        $widget = new Widget($this->client, self::ORIGIN, fn () => true);
+        $session = [];
+        $options = ['authorize_url' => '/authorize.php', 'form' => '#article', 'fields' => ['Title' => '#title'],
+            'article_ref' => 'news:123', 'source_job_id' => self::SITE];
+        $html = $widget->render($options, Widget::csrfToken($session));
+        $this->assertStringContainsString('"articleRef":"news:123"', $html);
+        $this->assertStringContainsString('"sourceJobId":"'.self::SITE.'"', $html);
+        $this->expectException(\InvalidArgumentException::class);
+        $widget->render([...$options, 'article_ref' => "invalid\nreference"], Widget::csrfToken($session));
+    }
 }

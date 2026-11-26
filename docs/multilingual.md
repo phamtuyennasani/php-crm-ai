@@ -1,5 +1,7 @@
 # Cấu hình ngôn ngữ cho AI Writer
 
+Từ 1.2.0, khai báo `AIConfig.articleRef` để giữ các ngôn ngữ và lần viết trong cùng một nhóm bài. Xem [quản lý bài gốc và các phiên bản](article-groups.md), gồm cách lưu liên kết sau khi đóng form hoặc đổi trình duyệt.
+
 Website khai báo ngôn ngữ nội dung trong `AIConfig.languages`. Ngôn ngữ gốc lấy từ cấu hình website, không từ ngôn ngữ trình duyệt hoặc tên miền. Các mã dùng BCP 47 như `en`, `vi`, `en-US`, `ja`, `zh-Hant`, `ar`. Tối đa 10 ngôn ngữ đích; không trùng bản gốc hoặc trùng nhau sau chuẩn hóa.
 
 ```js
