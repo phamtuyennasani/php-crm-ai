@@ -10,7 +10,7 @@ try {
         header('Allow: POST');
         throw new AuthorizationException(405, 'Endpoint này chỉ nhận POST.');
     }
-    $raw = file_get_contents('php://input', false, null, 0, 100001);
+    $raw = file_get_contents('php://input', false, null, 0, 1048577);
     $result = $widget->authorize($raw, $csrf, $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
     echo json_encode($result, JSON_THROW_ON_ERROR);
 } catch (AuthorizationException $error) {

@@ -158,6 +158,26 @@ final class PackageTest extends TestCase
         $store->read();
     }
 
+    public function test_multilingual_widget_maps_target_fields_and_signs_large_reviewed_snapshots(): void
+    {
+        $widget = new Widget($this->client, self::ORIGIN, fn () => true);
+        $session = [];
+        $csrf = Widget::csrfToken($session);
+        $options = ['authorize_url' => '/authorize.php', 'form' => '#article', 'fields' => ['Title' => '#en-title', 'Content' => '#en-body'],
+            'languages' => ['source' => 'en', 'targets' => ['vi']], 'fields_by_locale' => ['vi' => ['Title' => '#vi-title', 'Content' => '#vi-body']]];
+        $html = $widget->render($options, $csrf);
+        $this->assertStringContainsString('"languages":{"source":"en","targets":["vi"]}', $html);
+        $this->assertStringContainsString('"fieldsByLocale":', $html);
+        $this->assertStringContainsString('#vi-body', $html);
+        $body = json_encode(['model' => 'model', 'keyword' => 'article', 'languages' => $options['languages'], 'locale' => 'vi',
+            'translation_source' => ['Title' => 'Approved', 'Content' => '<p>'.str_repeat('reviewed text ', 2000).'</p>']]);
+        $this->assertGreaterThan(16000, strlen($body));
+        $proof = $widget->authorize(json_encode(['body' => $body, 'id' => 'translation']), $csrf, $csrf)['proof'];
+        $this->assertSame(1, $this->verifyProof($proof, '/v1/widget/'.self::SITE.'/previews', $body, 'translation'));
+        $this->expectException(\InvalidArgumentException::class);
+        $widget->render([...$options, 'languages' => ['source' => 'en', 'targets' => ['EN']]], $csrf);
+    }
+
     public function test_missing_encryption_key_cannot_silently_replace_existing_credentials(): void
     {
         $store = new CredentialsStore($this->directory.'/own.enc', $this->directory.'/own.key');

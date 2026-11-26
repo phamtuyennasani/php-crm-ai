@@ -33,13 +33,13 @@ final class Widget
         if (strlen($expectedCsrf) < 32 || strlen($expectedCsrf) > 512 || ! hash_equals($expectedCsrf, $providedCsrf)) {
             throw new AuthorizationException(403, 'Phiên xác thực không hợp lệ. Tải lại trang để tiếp tục.');
         }
-        if (strlen($rawBody) > 100000) {
+        if (strlen($rawBody) > 1048576) {
             throw new AuthorizationException(413, 'Yêu cầu cấp chữ ký quá lớn.');
         }
         try {
             $input = json_decode($rawBody, true, 32, JSON_THROW_ON_ERROR);
             if (! is_array($input) || ! isset($input['body'], $input['id']) || ! is_string($input['body']) || ! is_string($input['id'])
-                || strlen($input['body']) > 16000 || ! preg_match('/\A[\x21-\x7e]{1,160}\z/', $input['id'])) {
+                || strlen($input['body']) > 524288 || ! preg_match('/\A[\x21-\x7e]{1,160}\z/', $input['id'])) {
                 throw new \JsonException();
             }
             $payload = json_decode($input['body'], true, 512, JSON_THROW_ON_ERROR);
@@ -75,9 +75,39 @@ final class Widget
             }
         }
         $own = CredentialsStore::validate($ownCredentials);
+        $languages = $options['languages'] ?? null;
+        $localizedFields = $options['fields_by_locale'] ?? [];
+        if ($languages !== null) {
+            if (! is_array($languages) || ! is_string($languages['source'] ?? null) || ! is_array($languages['targets'] ?? null)
+                || ! array_is_list($languages['targets']) || count($languages['targets']) > 10 || array_diff(array_keys($languages), ['source', 'targets']) !== []) {
+                throw new InvalidArgumentException('Configure languages.source and languages.targets.');
+            }
+            $locales = [$languages['source'], ...$languages['targets']];
+            foreach ($locales as $locale) {
+                if (! is_string($locale) || ! preg_match('/\A[a-z]{2,3}(?:-[a-z0-9]{2,8}){0,3}\z/i', $locale)) {
+                    throw new InvalidArgumentException('Use BCP 47 language codes.');
+                }
+            }
+            if (count(array_unique(array_map('strtolower', $locales))) !== count($locales) || ! is_array($localizedFields)) {
+                throw new InvalidArgumentException('Language codes must be unique and have separate field mappings.');
+            }
+            $localizedFields[$languages['source']] ??= $fields;
+            foreach ($locales as $locale) {
+                $mapping = $localizedFields[$locale] ?? null;
+                if (! is_array($mapping) || $mapping === [] || array_diff(array_keys($mapping), $allowed) !== []) {
+                    throw new InvalidArgumentException('Configure fields_by_locale for every language.');
+                }
+                foreach ($mapping as $selector) {
+                    if (! is_string($selector) || $selector === '' || strlen($selector) > 1000) {
+                        throw new InvalidArgumentException('Widget fields must contain CSS selector strings.');
+                    }
+                }
+            }
+        }
         $id = 'crm-ai-'.bin2hex(random_bytes(12));
         $config = [
             'mount' => '#'.$id, 'form' => $options['form'], 'fields' => $fields,
+            ...($languages !== null ? ['languages' => $languages, 'fieldsByLocale' => $localizedFields] : []),
             'base_url' => $own['base_url'] ?? null, 'api_key' => $own['api_key'] ?? null, 'model' => $own['model'] ?? null,
         ];
         $json = json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR);
